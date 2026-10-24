@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSC336 - Web Tech Challenge</title>
+
+  <!-- jsPDF & AutoTable for client-side PDF download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* Original Teal Palette from the base project */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px 15px;
+      background: #eef7f6;
+      color: #173b3a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+    }
+
+    /* Header styling with original teal */
+    .top-header {
+      background: #0f766e;
+      color: white;
+      padding: 16px 20px;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-header h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .top-header p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    /* Card Box */
+    .card-box {
+      background: white;
+      border-radius: 0 0 10px 10px;
+      padding: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+      border: 1px solid #c9dfdc;
+      border-top: none;
+    }
+
+    /* Assignment 5-Colored Segment Bar */
+    .progress-bar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .seg {
+      height: 7px;
+      flex: 1;
+      border-radius: 4px;
+      opacity: 0.22;
+    }
+    .seg.active {
+      opacity: 1;
+    }
+
+    .seg-0 { background: #2563eb; } /* Blue */
+    .seg-1 { background: #0f766e; } /* Teal */
+    .seg-2 { background: #f59e0b; } /* Yellow/Amber */
+    .seg-3 { background: #dc2626; } /* Red */
+    .seg-4 { background: #9333ea; } /* Purple */
+
+    /* Info bar */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 13.5px;
+      font-weight: bold;
+    }
+
+    .timer-badge {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 4px 10px;
+      border-radius: 5px;
+      border: 1px solid #fecaca;
+    }
+
+    /* Rules Card */
+    .rules-box {
+      background: #e4f5f2;
+      border-left: 4px solid #f59e0b;
+      padding: 14px 16px;
+      margin-bottom: 22px;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .rules-box h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #0f766e;
+    }
+
+    .rules-box ul {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .q-title {
+      font-size: 17px;
+      font-weight: bold;
+      color: #173b3a;
+      margin: 0 0 18px;
+      line-height: 1.4;
+    }
+
+    /* Options */
+    .options-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .answer-btn {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      background: #f7fbfa;
+      color: #173b3a;
+      border: 1px solid #c9dfdc;
+      padding: 12px 14px;
+      border-radius: 7px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      background: #e4f5f2;
+      border-color: #0f766e;
+    }
+
+    .opt-tag {
+      font-weight: bold;
+      margin-right: 12px;
+      background: #e4f5f2;
+      color: #0f766e;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .opt-text {
+      flex: 1;
+    }
+
+    /* Correct & Wrong Answer Classes */
+    .answer-btn.correct {
+      background: #bbf7d0 !important;
+      border: 2px solid #059669 !important;
+      color: #065f46 !important;
+      font-weight: bold;
+    }
+
+    .answer-btn.wrong {
+      background: #fecaca !important;
+      border: 2px solid #dc2626 !important;
+      color: #991b1b !important;
+      font-weight: bold;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 7px;
+      background: #0f766e;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      font-family: inherit;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #0d655e;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #173b3a;
+      border: 1px solid #c9dfdc;
+      margin-right: 8px;
+    }
+
+    .btn-secondary:hover {
+      background: #f7fbfa;
+    }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 14px;
+      border-top: 1px solid #eef7f6;
+    }
+
+    /* Result View */
+    .result-view {
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    .score-display {
+      background: #e4f5f2;
+      border: 1px solid #c9dfdc;
+      display: inline-block;
+      padding: 16px 32px;
+      border-radius: 8px;
+      margin: 16px 0 20px;
+    }
+
+    .score-number {
+      font-size: 32px;
+      font-weight: bold;
+      color: #0f766e;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Original Teal Header -->
+    <header class="top-header">
+      <div>
+        <h1>Web Tech Challenge</h1>
+        <p>CSC336 · Web Technology Quiz</p>
+      </div>
+    </header>
+
+    <main class="card-box">
+      <!-- 5-Color Segment Bar -->
+      <div class="progress-bar">
+        <div id="seg-0" class="seg seg-0"></div>
+        <div id="seg-1" class="seg seg-1"></div>
+        <div id="seg-2" class="seg seg-2"></div>
+        <div id="seg-3" class="seg seg-3"></div>
+        <div id="seg-4" class="seg seg-4"></div>
+      </div>
+
+      <!-- VIEW 1: START SCREEN -->
+      <section id="screen-start">
+        <h2 style="margin: 0 0 10px; color: #0f766e; font-size: 19px;">Online Quiz Instructions</h2>
+        <p style="font-size: 14px; margin-bottom: 16px; color: #355e5b;">
+          Please review the rules before proceeding with the test.
+        </p>
+
+        <div class="rules-box">
+          <h3>Assessment Guidelines:</h3>
+          <ul>
+            <li>Total: <b>5 randomized questions</b> from Web Technologies.</li>
+            <li>Time Limit: <b>15 seconds</b> countdown for each question.</li>
+            <li>Multi-colored bar indicates your progress throughout the quiz.</li>
+            <li>Download your formal result as a <b>PDF</b> at the end.</li>
+          </ul>
+        </div>
+
+        <div style="text-align: right;">
+          <button class="btn" onclick="startQuiz()">Start Quiz →</button>
+        </div>
+      </section>
+
+      <!-- VIEW 2: ACTIVE QUIZ SCREEN -->
+      <section id="screen-quiz" class="hidden">
+        <div class="info-row">
+          <span id="q-counter">Question 1 of 5</span>
+          <span id="timer-text" class="timer-badge">Time: 15s</span>
+        </div>
+
+        <h2 id="q-title" class="q-title"></h2>
+
+        <div id="options-box" class="options-wrapper"></div>
+
+        <div class="footer-actions">
+          <button id="next-btn" class="btn" onclick="nextQuestion()" disabled>Next →</button>
+        </div>
+      </section>
+
+      <!-- VIEW 3: RESULT SCREEN -->
+      <section id="screen-result" class="hidden result-view">
+        <h2 style="color: #0f766e; margin: 0;">Quiz Completed!</h2>
+        <p style="font-size: 14px; color: #355e5b;">Your answers have been recorded.</p>
+
+        <div class="score-display">
+          <div style="font-size: 13px; color: #0f766e; font-weight: bold; margin-bottom: 4px;">YOUR SCORE</div>
+          <div id="score-text" class="score-number">0 / 5</div>
+        </div>
+
+        <div>
+          <button class="btn btn-secondary" onclick="restartQuiz()">Restart</button>
+          <button class="btn" onclick="downloadPDF()">Download Result (PDF)</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Question Bank
+    var questions = [
+      {
+        q: "Which JS keyword declares a block-scoped variable?",
+        opts: ["const", "let", "var", "all of these"],
+        ans: 1
+      },
+      {
+        q: "Which method selects element by ID in JavaScript?",
+        opts: ["querySelector()", "getElementById()", "selectId()", "getElement()"],
+        ans: 1
+      },
+      {
+        q: "Which HTML attribute is used to link CSS?",
+        opts: ["link", "href", "rel", "type"],
+        ans: 2
+      },
+      {
+        q: "Which method removes the last element of an array?",
+        opts: ["shift()", "pop()", "slice()", "splice()"],
+        ans: 1
+      },
+      {
+        q: "Which JS array method adds element to end?",
+        opts: ["unshift()", "push()", "concat()", "append()"],
+        ans: 1
+      },
+      {
+        q: "Which CSS property changes text color?",
+        opts: ["font-color", "text-color", "color", "background-color"],
+        ans: 2
+      },
+      {
+        q: "What does CSS stand for?",
+        opts: ["Creative Style Sheets", "Cascading Style Sheets", "Computer System Styles", "Colorful Style System"],
+        ans: 1
+      },
+      {
+        q: "Which Bootstrap class creates a full-width container?",
+        opts: [".container-fluid", ".container-full", ".box-fluid", ".row-fluid"],
+        ans: 0
+      },
+      {
+        q: "Which HTML tag is used to write internal JavaScript?",
+        opts: ["<javascript>", "<js>", "<script>", "<code>"],
+        ans: 2
+      },
+      {
+        q: "Which HTML tag is used to define an internal stylesheet?",
+        opts: ["<css>", "<script>", "<style>", "<design>"],
+        ans: 2
+      }
+    ];
+
+    var currentList = [];
+    var currentIdx = 0;
+    var score = 0;
+    var timer = 15;
+    var timerId = null;
+    var answered = false;
+    var userLog = [];
+
+    var screenStart = document.getElementById("screen-start");
+    var screenQuiz = document.getElementById("screen-quiz");
+    var screenResult = document.getElementById("screen-result");
+
+    function startQuiz() {
+      // Pick 5 randomized questions
+      currentList = questions.sort(function() { return 0.5 - Math.random(); }).slice(0, 5);
+      currentIdx = 0;
+      score = 0;
+      userLog = [];
+
+      screenStart.classList.add("hidden");
+      screenResult.classList.add("hidden");
+      screenQuiz.classList.remove("hidden");
+
+      renderQuestion();
+    }
+
+    function updateSegments() {
+      for (var i = 0; i < 5; i++) {
+        var seg = document.getElementById("seg-" + i);
+        if (i <= currentIdx) {
+          seg.classList.add("active");
+        } else {
+          seg.classList.remove("active");
+        }
+      }
+    }
+
+    function renderQuestion() {
+      answered = false;
+      clearInterval(timerId);
+      timer = 15;
+
+      updateSegments();
+
+      var item = currentList[currentIdx];
+      document.getElementById("q-counter").innerText = "Question " + (currentIdx + 1) + " of 5";
+      document.getElementById("q-title").innerText = item.q;
+
+      var nextBtn = document.getElementById("next-btn");
+      nextBtn.disabled = true;
+      nextBtn.innerText = (currentIdx === 4) ? "Finish" : "Next →";
+
+      var container = document.getElementById("options-box");
+      container.innerHTML = "";
+      var letters = ["A", "B", "C", "D"];
+
+      item.opts.forEach(function(optText, idx) {
+        var btn = document.createElement("button");
+        btn.className = "answer-btn";
+
+        var tag = document.createElement("span");
+        tag.className = "opt-tag";
+        tag.textContent = letters[idx];
+
+        var txt = document.createElement("span");
+        txt.className = "opt-text";
+        txt.textContent = optText; // Safe: never hides <tags>
+
+        btn.appendChild(tag);
+        btn.appendChild(txt);
+
+        btn.onclick = function() {
+          chooseOption(idx, btn);
+        };
+        container.appendChild(btn);
+      });
+
+      startTimer();
+    }
+
+    function startTimer() {
+      var timerText = document.getElementById("timer-text");
+      timerText.innerText = "Time: " + timer + "s";
+
+      timerId = setInterval(function() {
+        timer = timer - 1;
+        timerText.innerText = "Time: " + timer + "s";
+
+        if (timer <= 0) {
+          clearInterval(timerId);
+          handleTimeout();
+        }
+      }, 1000);
+    }
+
+    function handleTimeout() {
+      if (answered) return;
+      answered = true;
+
+      var item = currentList[currentIdx];
+      userLog.push({
+        question: item.q,
+        yourAns: "Not Answered",
+        correctAns: item.opts[item.ans],
+        status: "Incorrect"
+      });
+
+      colorAnswers(-1);
+      document.getElementById("next-btn").disabled = false;
+    }
+
+    function chooseOption(chosenIdx, clickedBtn) {
+      if (answered) return;
+      answered = true;
+      clearInterval(timerId);
+
+      var item = currentList[currentIdx];
+      var isCorrect = (chosenIdx === item.ans);
+
+      if (isCorrect) {
+        score++;
+      }
+
+      userLog.push({
+        question: item.q,
+        yourAns: item.opts[chosenIdx],
+        correctAns: item.opts[item.ans],
+        status: isCorrect ? "Correct" : "Incorrect"
+      });
+
+      colorAnswers(chosenIdx);
+      document.getElementById("next-btn").disabled = false;
+    }
+
+    function colorAnswers(chosenIdx) {
+      var item = currentList[currentIdx];
+      var buttons = document.querySelectorAll("#options-box .answer-btn");
+
+      buttons.forEach(function(b, idx) {
+        b.disabled = true;
+        if (idx === item.ans) {
+          b.classList.add("correct");
+        } else if (idx === chosenIdx) {
+          b.classList.add("wrong");
+        } else {
+          b.style.opacity = "0.5";
+        }
+      });
+    }
+
+    function nextQuestion() {
+      if (currentIdx < 4) {
+        currentIdx++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      clearInterval(timerId);
+      screenQuiz.classList.add("hidden");
+      screenResult.classList.remove("hidden");
+      document.getElementById("score-text").innerText = score + " / 5";
+    }
+
+    function restartQuiz() {
+      for (var i = 0; i < 5; i++) {
+        document.getElementById("seg-" + i).classList.remove("active");
+      }
+      screenResult.classList.add("hidden");
+      screenStart.classList.remove("hidden");
+    }
+
+    // PDF Download
+    function downloadPDF() {
+      var doc = new window.jspdf.jsPDF();
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("Quiz Result", 20, 24);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(13);
+      doc.text("Score: " + score + " / 5", 20, 34);
+
+      var tableRows = userLog.map(function(item, index) {
+        return [
+          index + 1,
+          item.question,
+          item.yourAns,
+          item.correctAns,
+          item.status
+        ];
+      });
+
+      doc.autoTable({
+        startY: 42,
+        head: [['#', 'Question', 'Your Answer', 'Correct Answer', 'Status']],
+        body: tableRows,
+        theme: 'plain',
+        headStyles: {
+          fillColor: [228, 245, 242],
+          textColor: [15, 118, 110],
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        bodyStyles: {
+          fontSize: 9,
+          textColor: [23, 59, 58],
+          cellPadding: 4
+        },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' },
+          1: { cellWidth: 65 },
+          2: { cellWidth: 38 },
+          3: { cellWidth: 38 },
+          4: { cellWidth: 25, halign: 'center' }
+        },
+        didDrawCell: function(data) {
+          if (data.section === 'body' && data.column.index === 4) {
+            var text = data.cell.raw;
+            data.cell.text = '';
+
+            var x = data.cell.x + (data.cell.width - 22) / 2;
+            var y = data.cell.y + (data.cell.height - 7) / 2;
+
+            if (text === 'Correct') {
+              doc.setFillColor(5, 150, 105);
+            } else {
+              doc.setFillColor(220, 38, 38);
+            }
+
+            doc.roundedRect(x, y, 22, 7, 1, 1, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8);
+            doc.text(text, x + 11, y + 4.8, { align: 'center' });
+          }
+        }
+      });
+
+      doc.save("Quiz_Result.pdf");
+    }
+  </script>
+</body>
+</html>
